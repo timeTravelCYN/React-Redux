@@ -211,3 +211,29 @@ Context 这个功能相当于提供了一个全局可以访问的对象，但是
 
 ### React-Redux
 
+
+react-redux 的两个最主要的功能：
+
+* connect 连接容器组件和傻瓜组件
+* Provider 提供包含 store 的 context
+
+#### 1. connect
+
+connect 是 react-redux 提供的一个方法， 这个方法接收两个参数 mapStateToProps 和 mapDispatchToProps， 执行的结果依然是一个函数， 再执行的参数是傻瓜组件，最后产生的就是容器组件
+
+这个 connext 具体做了什么工作呢？
+
+作为容器组件，要做的工作无外乎两件事：
+
+* 把 Store 上的状态转化为内层傻瓜组件的 prop
+* 把内层傻瓜组件中的用户动作转化为派送给 Store 的动作
+
+#### 2. Provider
+
+我们在 redux_with_context 实现了一个 Provider， 我们要求它是一个 Object， 而 react-redux 要求更加严格，必须包含三个函数
+
+* subscribe
+* dispatch
+* getState
+
+react-redux 定义了 Provider 的 componentWillReceiveProps 函数，在 React 组件的生命周期中， componentWillReceiveProps 函数在每次重新渲染时都会调用到， reactredux 在 componentWillReceiveProps 函数中会检查这次渲染时代表 store 的 prop 和上一次的是否一样。 如果不一样，就会给出警告，这样做是为了避免多次渲染用了不同的 Redux Store 。 每个 Redux 应用只能有一个 Redux Store ，在整个 Redux 的生命周期中都应该保持 Store 的唯一性 。
