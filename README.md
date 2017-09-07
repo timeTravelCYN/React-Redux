@@ -1,169 +1,133 @@
-# 深入浅出React和Redux
+# 模块化 React 和 Redux 应用
 
-## 易于维护组件的设计要素
+## 模块化应用要点
 
-拆分组件最关键的就是确定组件的边界。
-组件的划分要满足高内聚和低耦合
-高内聚指的是把逻辑紧密相关的内容放在一个组件中 。 用户界面无外乎内容 、 交互
-行为和样式
-低耦合指的是不同组件之间的依赖关系要尽量弱化，也就是每个组件要尽量独立 
+Reat 和 Redux 都信奉的公式:  `UI=render(state)`
 
-## React组件的数据
+React 适合于视图层面的东西, 但是不能指望靠 React 来管理应用的状态, Redux 适合管理状态
 
-prop是组件的对外接口，state是组件的内部状态，对外用prop，内部用state
+我们开发一个新应用的时候，要考虑以下几件事情:
 
+* 代码文件的组织结构
+* 确定模块的边界
+* Store 的状态树设计
 
-### React的prop
+## 代码文件的组织方式
 
-React组件的prop很像是HTML元素的属性，不过，HTML组件属性的值都是字符串类型，即使是内嵌JavaScript，也依然是字符串形式表示代码。React组件的prop所能支持的类型则丰富得多，除了字符串，可以使任何一种JavaScript语言支持的数据类型。当 prop 的类型不是字符串类型时，在 JSX 中必
-须用花括号｛｝把 prop 值包住
+在 MVC 框架中，应用代码分为 Controller、 Model 和 View， 这叫做 ‘按角色组织’
 
-在构造函数中可以通过props读取prop的值，在其他函数中需要通过this.props读取。
+受这种 ‘按角色组织’ 代码文件的影响， 在 Redux 应用中，就有一种代码组织方法如下：
 
-通过PropTypes对props进行规范
+```JavaScript
+|--reducers/
+ ----todoReducer.js
+ ----filterReducer.js
+|--actions/
+ ----todoActions.js
+ ----filterActions.js
+|--components/
+ ----todoList.js
+ ----todoItem.js
+|--containers/
+ ----todoListContainer.js
+ ----todoItemContainer.js
+ ----filterContainer.js
+```
 
-可以用defaultProps设置默认
+各个目录代码文件的角色如下：
 
-### React的state
+* reducer 目录包含所有 Redux 的 reducer
+* actions 目录包含所有 action 构造函数
+* components 目录包含所有的傻瓜组件
+* containers 目录包含所有的容器组件
 
-组件的state必须是一个JavaScript对象，即使我们需要存储的只是一个数字类型的数据，也只能把它寸作state某个字段对应的值。
+`‘按角色组织’`虽然看起来不错，但是不利用应用的扩展，当需要对一个功能进行修改，牵扯到了各个角色，那么你得很费劲才能在各个目录之间跳转，比较浪费时间
 
-this.state读取组件当前的state，但是改变state必须用this.setState
+### 按功能组织
 
-this.setState所做的事情，首先是改变this.state的值，然后驱动组件经历更新过程。
+Redux 适合于 ‘按功能组织’，就是把完成同一应用功能的代码放在一个目录下，一个应用功能包含多个角色代码。
 
-### prop和state的对比
+拿现在常见的 Todo 应用为例子，文件目录列表如下
 
-* prop用于定义外部接口，state用于记录内部状态。
+```
+|--todoList/
+ ----actions.js
+ ----actionTypes.js
+ ----index.js
+ ----reducer.js
+ ----views/
+ ------component.js
+ ------container.js
+|--filter/
+ ----actions.js
+ ----actionType.js
+ ----index.js
+ ----reducer.js
+ ----views/
+ ------component.js
+ ------container.js
+```
 
-* prop的赋值在外部世界使用组件时，state的赋值在组件内部
+* actionTypes 定义 action 类型
+* action.js 定义 action 构造函数, 决定了这个功能模块可以接受的动作
+* reducer.js 定义这个功能模块如何响应 actions.js 中定义的动作
+* views目录，包含这个功能模块所有的 React 组件,包括傻瓜组件和容器组件
+* index.js 这个文件吧所有角色导入，然后统一导出
 
-* 组件不应该改变prop的值，而state存在的目的就是让组件来改变的
+当你需要修改某个功能模块的代码的时候，只要关注对应的目录就行了。
 
-## 组件的生命周期
+### 模块接口
 
-老生常谈的生命周期(也叫钩子函数)
+> 在最理想的情况下，我们应该通过增加代码就能增加系统的功能，而不是通过对现有代码的修改来增加功能
 
-React严格定义了组件的声明周期，生命周期可能会经历如下三个过程：
+以上，就是程序员的最理想状态。
 
-1. 装载过程(Mount), 也就是把组件第一次在DOM树种渲染的过程
+React 组件本身就应该具有 低耦合性 和 高内聚性，不过，在 Redux 中， React 组件扮演的就是一个视图的角色，还有 reducer、 actions 这些角色参与，对于整个 Redux 应用而言，整体由模块构成，但是模块不再是 React 组件， 而是由 React 组件加上相关 reducer 和 actions 构成的一个小整体
 
-2. 更新过程(Update), 当组件被重新渲染的过程
+可以预期每个模块之间会有依赖关系，那么我们希望对方如何导入呢？
 
-3. 卸载过程(Unmount),组件从DOM中删除的过程
+现在我们既然把一个目录看成一个模块，那么我们要做的就是明确这个模块对外的接口，而这个接口应该实现吧内部封装起来
 
-### mount
+比如，我们在 todoList/index.js 中，
 
-装载过程，当组件第一次被渲染的时候，依次调用的:
+```JavaScript
+import * as actions from './ actions.js ';
+import reducer from './reducer.js';
+import view from './views/container.js';
+export {actions, reducer, view}
+```
+如果 filter 中的组件想要使用 todoList 中的功能，应该导人 todoList 这个目录，因为导人一个目录的时候，默认导人的就是这个目录下的 index.js 文件， index. 文件中导出的内容，就是这个模块想要公开出来的接口 。
 
-* constructor
-* getInitialState
-* getDefaultProps
-* componentWillMount
-* render
-* compoenntDidMount
+### 状态树设计
 
-1. constructor
+因为所有的状态都存在 Store 上， Store 的状态树设计，直接决定了要写哪些 Reducer， 还有 action怎么写，是所有程序逻辑的源头
 
-这是ES6中每个类的构造函数，要创造一个组件类的示例，当然会调用对应的构造函数
+状态树设计要遵循如下几个原则：
 
-**并不是每个组件都需要定义自己的构造函数，无状态的React组件往往就不需要定义构造函数**
+* 一个模块控制一个状态节点
+* 避免冗余数据
+* 树形结构扁平
 
-React组件需要构造函数的目的往往是
+#### 一个状态节点只属于一个模块
 
-* 初始化state,因为组件生命周期中任何函数都可能要访问state,那么整个生命周期中第一个被调用的构造函数自然是初始化state最理想的地方
+在 Redux 应用中， Store 上的每个 state 都只能通过 reducer 来更改， 而我们每个模块都有机会导出一个自己的 reducer ， 这个导出的 reducer 最多只能够更改状态树上属于自己那个节点的数据，因为 reducer 之间对状态树上的修改权是互斥的，不可能让两个 reducer 都可以修改同一个状态树上的节点
 
-* 绑定成员函数的this环境
+比如， A 模块的 reducer 负责修改状态树上 a 字段下的数据，那么另一个模块 B 的 reducer 就不可能有机会修改 a 字段下的数据
 
-有一种 `this.foo = ::this.foo` 等同于 `this.foo = this.foo.bind(this)` 这里所使用的两个冒号操作符叫做bind操作符，但是bind操作符可能不会成为ES标准语法的一部分，所以，尽量不要使用！！！
+实际上 Redux Store 上的全部状态，在任何时候，对任何模块都是开放的，通过 store.getState() 总能够读取当整个状态树的数据
 
-2. getInitialState 和 getDefaultProps
 
-getInitialState这个函数的返回值会初始化组件的state，但这个方法只有用React.createClass方法创造的组件类才会发生作用，ES6语法这个函数不会产生作用。
+#### 避免冗余数据
 
-GetDefaultProps 函数的返回值可以作为props的初始值，ES6方法定义的组件中也不会用到。
+如果 Store 上存在冗余数据，那么对数据一致性就可能会有影响。
 
-getInitialState只出现在装载过程中，整个生命周期过程中，这个函数只被调用一次
+传统的关系型数据库中， 对数据结构的各种‘范式化’，其实就是在去除数据的冗余。
 
-3. render
+#### 树形结构扁平
 
- render函数是每个React组件一定要实现的函数
+如果树形结构层次很深， 往往意味着树形很复杂， 一个很复杂的状态树是难以管理的
 
- 一个组件要发挥作用，总是要渲染一些东西，render函数并不做实际的渲染动作，他只是返回一个jsx描述的结构，最终由React来渲染
+## Todo 应用实例
 
- 某些特殊组件的作用不是渲染界面，或者组件在某些情况下选择没有东西可画，那就让render函数返回一个null或者false,等于告诉React,这个组件这次不需要渲染任何DOM元素
-
- *render函数应该是一个纯函数*，完全根据state和props来决定返回的结果，不要产生任何副作用。在render中调用setState是错误的，因为一个纯函数不应该引起状态的改变
-
-4. componentWillMount 和 componentDidMount
-
-componentWillMount 会在调用 render 函数之前被调用，  componetDidMount 会在调用
- render 函数之后被调用
-
- 通常不用定义 componentWillMount 函数，这个函数发生在“将要装载”的时候，这个时候没有任何渲染出来的结果，即使调用this.setState修改状态也不会引发重新绘制。换句话说，这个钩子中做的事情都可以提前到constructor中去做，可以认为这个函数存在的主要目的就是为了和componentDidMount对称
-
-render 函数被调用完之后， componentDidMount 函数是不会被立刻调用的， componentDidMount 被调用的时候， render 函数返回的东西已经引发了渲染，组件已经被“装载”到了DOM树上
-
-可以清楚地看到,虽然 componentWillMount 都是紧贴着自己组件的 render 函数之前被调用的, 但 componentDidMount 不是紧跟着 render 函数被调用，当所有三个组件的 render 函数都被调用之后 ，三个组件的 componentDidMount 才连载一起被调用
-
-之所以会有上面的现象，是因为 render 函数本身并不往 DOM 树上渲染或者装载内
-容，它只是返回一个 JSX 表示的对象，然后由 React 库来根据返回对象决定如何渲染 。
-而 React 库肯定是要把所有组件返回的结果综合起来，才能知道该如何产生对应的 DOM
-修改 。 所以，只有 React 库调用三个 Counter 组件的 render 函数之后，才有可能完成装
-载，这时候才会依次调用各个组件的 componentDidMount 函数作为装载过程的收尾 。
-
-### 更新过程
-
-当props或者state被修改的时候，就会引发组件的更新过程
-
-* componentWillReceiveProps
-
-* shouldComponentUpdate
-
-* componentWillUpdate
-
-* render 
-
-* componentDidUpdate
-
- 1. componentWillReceiveProps(nextProps)
-
- 只要是父组件的render函数被调用,在render函数里面被渲染的子组件就会经历更新过程，不管父组件传给子组件的props有没有改变，都会触发子组件的 componentWillReceiveProps函数
-
- this.setState 方法触发的更新过程不会调用这个函数，因为这个函数会根据新的props值来计算出是不是要更新内部状态 state。 更新组件内部状态的方法就是 this.setState , 如果this.setState 的调用导致 componentWillReceiveProps 再一次被调用，那就是一个死循环了。
-
-**在 onClick 中用匿名函数虽然简洁，但是并不值得提倡，因为每次渲染都会创造一个新的匿名方法对象,而且有可能引发子组件不必要的重新渲染。**
-
-所以调用这个钩子的时候，有必要吧传入参数 nextProps 和 this.props 做对比，只有改变了的时候才执行某些逻辑
-
-2. shouldComponentUpdate(nextProps, nextState)
-
-除了 render 函数，shouldComponentUpdate 可能是 React 组件生命周期中最重要的一个函数了，因为它决定了一个组件什么时候不需要渲染，这两个也是react生命周期函数中唯二两个要求有返回结果的函数。render 函数的返回结果将用于构造 DOM 对象，而 shouldComponentUpdate 函数返回一个布尔值，告诉 React 库这个组件在这次更新过程中是否要继续 。
-
-3. componentWillUpdate 和 componentDidUpdate 
-
-如果组件的 shouldComponentUpdate 函数返回 true, React 接下来就会依次调用对应
-组件的 componentWillUpdate 、 render 和 componentDidUpdate 函数 。
-
-### 卸载过程
-
-componentWillUnmount 中的工作往往和 componentDidMount 有关，比如，在
-componentDidMount 中用非 React 的方法创造了一些 DOM 元素，如果撒手不管可能会造
-成内存泄露，那就需要在 componentWillUnmount 中把这些创造的 DOM 元素清理掉。
-
-## 组件向外传递数据
-
-通过props传递进入一个函数，在组件中触发这个props的函数，然后父组件执行相应的函数修改state
-
-## React 组件 state 和 prop 的局限
-
-*每个 Counter 组件都有自己的状态记录当前计数，而父组件 ControlPanel 也有一个状态来存储所有 Counter 计数总和，也就是说，数据发生了重复*
-
-数据一旦重复，带来的一个问题就是如何保证重复的数据一致，如果数据存多份而且不一致，那就很难保证结果正确
-
-干脆不要让任何一个 React 组件存放数据，把数据源存放在 React 组件之外形成全局状态, 让各个组件保持和全局状态一致
-
-props也存在问题，如果爷爷要给孙子传递某些信息，那么必须经过父亲也支持这些props，违反了低耦合的设计要求。
-
-
+### Todo状态设计
 
