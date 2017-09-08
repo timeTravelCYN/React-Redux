@@ -131,3 +131,16 @@ export {actions, reducer, view}
 
 ### Todo状态设计
 
+### action 构造函数
+
+Redux 的 action 构造函数就是创造 action 对象的函数，返回的 action 对象中必有一个 type 字段代表 action 类型
+
+### 组合 reducer
+
+每个模块都需要有自己的 reducer，但是 Redux 的 createStore 函数只能接受一个 reducer， 所以我们要组合 reducer
+
+使用 Redux 提供的 combineReducers 来把多个 reducer 函数合成为一个 reducer 函数
+
+combineReducers 函数接受一个对象作为参数，参数对象的每个字段名对应了 State 状态上的宇段名（在上面的例子中宇段名分别是 todos 和 filter），每个字段的值都是一个 reducer 函数（在上面的例子中分别是 todoReducer 和 filterReducer ）, combineReducers 函
+数返回一个新的 reducer 函数 当这个新的 reducer 函数被执行时会把传人的 state 参数对象拆开处理， todo 字段下的子状态交给 todoReducer, filter 宇段下的子状态交给 filterReducer ，然后再把这两个调用的返回结果合并成一个新的 state ，作为整体 reducer 函数的返回结果。
+
